@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Script from "next/script"; 
+import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,22 +20,38 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="pt-br">
-      <body
-        className={`
-    ${geistSans.variable} 
-    ${geistMono.variable} 
-    antialiased
-  `}
-      >
-         <Script
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+
+      
+        <div
+          id="g_id_onload"
+          data-client_id={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+          data-callback="handleGoogleResponse"
+          data-auto_select="false"
+          style={{ display: "none" }}
+        ></div>
+
+        <Script id="google-callback">
+          {`
+            window.handleGoogleResponse = (response) => {
+              window.dispatchEvent(
+                new CustomEvent("google-login", { detail: response })
+              );
+            };
+          `}
+        </Script>
+
+        {/* 🔹 3. GSI Script */}
+        <Script
           src="https://accounts.google.com/gsi/client"
           strategy="afterInteractive"
         />
+
         {children}
       </body>
     </html>

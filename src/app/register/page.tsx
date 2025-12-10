@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import Script from "next/script";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
 
@@ -12,7 +11,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Callback chamado pelo Google
+  // -------- HANDLE LOGIN GOOGLE -------- //
   async function handleGoogleResponse(response: any) {
     try {
       setIsLoading(true);
@@ -48,12 +47,17 @@ export default function RegisterPage() {
     }
   }
 
-if (typeof window !== "undefined") {
-  (window as any).handleGoogleResponse = handleGoogleResponse;
-}
+  // -------- ESCUTA O EVENTO DO CALLBACK GLOBAL -------- //
+  useEffect(() => {
+    function handler(e: any) {
+      handleGoogleResponse(e.detail);
+    }
 
+    window.addEventListener("google-login", handler);
+    return () => window.removeEventListener("google-login", handler);
+  }, []);
 
-  // Ação do botão
+  // -------- ABRE POPUP DO GOOGLE -------- //
   function loginWithGoogle() {
     if (!window.google?.accounts?.id) {
       alert("Google API ainda não carregou.");
@@ -64,65 +68,41 @@ if (typeof window !== "undefined") {
   }
 
   return (
-    <>
-     <div
-        id="g_id_onload"
-        data-client_id={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
-        data-callback="handleGoogleResponse"
-        data-auto_select="false"
-        style={{ display: "none" }}
-      ></div>
-      <Script
-        src="https://accounts.google.com/gsi/client"
-        strategy="afterInteractive"
-        onLoad={() => {
-          console.log("Google script loaded!");
+    <div className="min-h-screen bg-background flex flex-col items-center px-4 py-14">
+      {/* VOLTAR */}
+      <div className="w-full max-w-2xl mb-10">
+        <Link href="/" className="flex items-center gap-2 text-foreground">
+          <ArrowLeft className="w-4 h-4" />
+          Voltar
+        </Link>
+      </div>
 
-          window.google.accounts.id.initialize({
-            client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
-            callback: handleGoogleResponse,
-            ux_mode: "popup",
-          });
-        }}
-      />
+      {/* CONTAINER */}
+      <div className="w-full max-w-2xl border border-border rounded-3xl bg-card shadow-card p-10 flex flex-col items-center text-center gap-8">
 
-      <div className="min-h-screen bg-background flex flex-col items-center px-4 py-14">
+        <h1 className="text-4xl font-display font-bold mt-9">
+          Boas vindas ao <span className="text-primary">BroccoFit</span>.
+        </h1>
 
-        {/* VOLTAR */}
-        <div className="w-full max-w-2xl mb-10">
-          <Link href="/" className="flex items-center gap-2 text-foreground">
-            <ArrowLeft className="w-4 h-4" />
-            Voltar
-          </Link>
-        </div>
+        <p className="text-foreground mt-5 text-base max-w-md">
+          Teste gratuitamente entrando com a sua conta Google.
+        </p>
 
-        {/* CONTAINER */}
-        <div className="w-full max-w-2xl border border-border rounded-3xl bg-card shadow-card p-10 flex flex-col items-center text-center gap-8">
+        <div className="w-full max-w-lg bg-card p-4 rounded-2xl flex flex-col items-center gap-6">
 
-          <h1 className="text-4xl font-display font-bold mt-9">
-            Boas vindas ao <span className="text-primary">BroccoFit</span>.
-          </h1>
+          <Button
+            onClick={loginWithGoogle}
+            size="lg"
+            variant="secondary"
+            disabled={isLoading}
+            className="w-full rounded-xl flex items-center justify-center gap-3 cursor-pointer"
+          >
+            <img src="/google.svg" alt="Google" className="w-5 h-5" />
+            {isLoading ? "Conectando..." : "Entrar com o Google"}
+          </Button>
 
-          <p className="text-foreground mt-5 text-base max-w-md">
-            Teste gratuitamente entrando com a sua conta Google.
-          </p>
-
-          <div className="w-full max-w-lg bg-card p-4 rounded-2xl flex flex-col items-center gap-6">
-
-            <Button
-              onClick={loginWithGoogle}
-              size="lg"
-              variant="secondary"
-              disabled={isLoading}
-              className="w-full rounded-xl flex items-center justify-center gap-3 cursor-pointer"
-            >
-              <img src="/google.svg" alt="Google" className="w-5 h-5" />
-              {isLoading ? "Conectando..." : "Entrar com o Google"}
-            </Button>
-
-          </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
