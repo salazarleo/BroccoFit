@@ -1,29 +1,53 @@
+// src/app/api/auth/google/route.ts
 import { NextResponse } from "next/server";
 import { OAuth2Client } from "google-auth-library";
 import { prisma } from "@/lib/prisma";
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const clientId = process.env.GOOGLE_CLIENT_ID;
+
+if (!clientId) {
+  // Isso aparece só no LOG do servidor (Vercel)
+  console.error("❌ GOOGLE_CLIENT_ID não definido no ambiente do servidor");
+}
+
+const client = new OAuth2Client(clientId);
 
 export async function POST(req: Request) {
   try {
-    const { credential } = await req.json();
+    const body = await req.json();
+    const credential = body?.credential;
+
+    console.log("🔹 [/api/auth/google] body recebido:", body ? "ok" : "vazio");
 
     if (!credential) {
+      console.error("❌ Nenhuma credential recebida do frontend");
       return NextResponse.json(
         { error: "Credencial do Google não enviada" },
         { status: 400 }
       );
     }
 
-    // Verifica se o token é válido e foi emitido para o seu app
+    if (!clientId) {
+      return NextResponse.json(
+        { error: "Servidor sem GOOGLE_CLIENT_ID configurado" },
+        { status: 500 }
+      );
+    }
+
+    // 1) Validar token do Google
     const ticket = await client.verifyIdToken({
       idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      audience: clientId,
     });
 
     const payload = ticket.getPayload();
+    console.log("✅ Token Google validado. Payload:", {
+      email: payload?.email,
+      name: payload?.name,
+    });
 
     if (!payload || !payload.email) {
+      console.error("❌ Payload sem e-mail:", payload);
       return NextResponse.json(
         { error: "Token do Google inválido ou sem e-mail" },
         { status: 400 }
@@ -34,7 +58,7 @@ export async function POST(req: Request) {
     const name = payload.name || null;
     const image = payload.picture || null;
 
-    // Cria (ou atualiza) o usuário no banco
+    // 2) Upsert no banco (Prisma + Supabase)
     const user = await prisma.user.upsert({
       where: { email },
       update: { name, image },
@@ -45,7 +69,11 @@ export async function POST(req: Request) {
       },
     });
 
-    // Retorna os dados básicos do usuário
+    console.log("✅ Usuário salvo/atualizado no banco:", {
+      id: user.id,
+      email: user.email,
+    });
+
     return NextResponse.json(
       {
         user: {
@@ -57,10 +85,15 @@ export async function POST(req: Request) {
       },
       { status: 200 }
     );
-  } catch (error) {
-    console.error("Erro no login com Google:", error);
+  } catch (error: any) {
+    console.error("🔥 Erro no login com Google:", error);
+
+    // Devolve a mensagem também pra gente enxergar no Network -> Response
     return NextResponse.json(
-      { error: "Erro no login com Google" },
+      {
+        error: "Erro no login com Google",
+        details: error?.message || String(error),
+      },
       { status: 500 }
     );
   }
