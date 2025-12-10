@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+/* TEMA DO BODYFLOW - Tailwind 4 */
+@theme inline {
+  /* Base */
+  --color-background: #ffffff;
+  --color-foreground: #204749;
+
+  /* Primárias */
+  --color-primary: #9eea6c;
+  --color-primary-foreground: #ffffff;
+
+  /* Secundárias */
+  --color-secondary: #ffffff;
+  --color-secondary-foreground: #204749;
+
+  /* Accent */
+  --color-accent: #204749;
+  --color-accent-foreground: #ffffff;
+
+  /* UI */
+  --color-border: #c4f1dd;
+  --color-input: #c4f1dd;
+  --color-ring: #9eea6c;
+
+  /* Card */
+  --color-card: #ffffff;
+  --color-card-foreground: #204749;
+
+  /* Muted */
+  --color-muted: #ffffff;
+  --color-muted-foreground: #64748b;
+
+  /* Raio */
+  --radius: 18px;
+
+  /* Fonts */
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* Gradiente verde */
+.gradient-primary {
+  background: #9eea6c;
+}
+
+/* Texto gradiente */
+.text-gradient {
+  background: #9eea6c;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Sombra dos cards */
+.shadow-card {
+  box-shadow: 0 8px 30px rgba(16, 185, 129, 0.08);
+}
+
+/* Sombra dos botões */
+.shadow-button {
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.25);
+}
+
+@theme inline {
+  --color-primary-light: #d1fae5; /* tom suave do verde */
+}
+
+/* Base global */
+@layer base {
+  body {
+    background-color: #ffffff;
+    color: #204749;
+    font-family: var(--font-sans);
+  }
+
+  * {
+    border-color: var(--color-border);
+  }
+}
