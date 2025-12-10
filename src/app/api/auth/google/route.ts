@@ -4,6 +4,7 @@ import { OAuth2Client } from "google-auth-library";
 import { prisma } from "@/lib/prisma";
 
 const clientId = process.env.GOOGLE_CLIENT_ID;
+console.log("DATABASE_URL da Vercel →", process.env.DATABASE_URL);
 
 if (!clientId) {
   // Isso aparece só no LOG do servidor (Vercel)
