@@ -48,6 +48,11 @@ export default function RegisterPage() {
     }
   }
 
+if (typeof window !== "undefined") {
+  (window as any).handleGoogleResponse = handleGoogleResponse;
+}
+
+
   // Ação do botão
   function loginWithGoogle() {
     if (!window.google?.accounts?.id) {
@@ -60,6 +65,13 @@ export default function RegisterPage() {
 
   return (
     <>
+     <div
+        id="g_id_onload"
+        data-client_id={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+        data-callback="handleGoogleResponse"
+        data-auto_select="false"
+        style={{ display: "none" }}
+      ></div>
       <Script
         src="https://accounts.google.com/gsi/client"
         strategy="afterInteractive"
@@ -102,7 +114,7 @@ export default function RegisterPage() {
               size="lg"
               variant="secondary"
               disabled={isLoading}
-              className="w-full rounded-xl flex items-center justify-center gap-3"
+              className="w-full rounded-xl flex items-center justify-center gap-3 cursor-pointer"
             >
               <img src="/google.svg" alt="Google" className="w-5 h-5" />
               {isLoading ? "Conectando..." : "Entrar com o Google"}
