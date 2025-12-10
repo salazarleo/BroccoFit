@@ -1,70 +1,64 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function POST(req: Request) {
+// =======================
+// GET → Buscar perfil
+// =======================
+export async function GET(req: Request) {
   try {
-    const body = await req.json();
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
 
-    const {
-      userId,
-      name,
-      birthDate,
-      sex,
-      weightKg,
-      heightCm,
-    } = body;
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: "userId é obrigatório" },
-        { status: 400 }
-      );
+    if (!id) {
+      return NextResponse.json({ error: "id é obrigatório" }, { status: 400 });
     }
 
-    // Converte a data (string yyyy-mm-dd) para Date, se vier
-    let parsedBirthDate: Date | null = null;
+    const user = await prisma.user.findUnique({ where: { id } });
+
+    if (!user) {
+      return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
+    }
+
+    return NextResponse.json({ user }, { status: 200 });
+  } catch (error) {
+    console.error("Erro no GET /profile:", error);
+    return NextResponse.json({ error: "Erro interno" }, { status: 500 });
+  }
+}
+
+// =======================
+// POST → Atualizar perfil
+// =======================
+export async function POST(req: Request) {
+  try {
+    const { id, name, birthDate, sex, weightKg, heightCm } = await req.json();
+
+    if (!id) {
+      return NextResponse.json({ error: "id é obrigatório" }, { status: 400 });
+    }
+
+    let parsedDate: Date | null = null;
     if (birthDate) {
-      parsedBirthDate = new Date(birthDate);
-      if (isNaN(parsedBirthDate.getTime())) {
-        return NextResponse.json(
-          { error: "Data de nascimento inválida" },
-          { status: 400 }
-        );
+      parsedDate = new Date(birthDate);
+      if (isNaN(parsedDate.getTime())) {
+        return NextResponse.json({ error: "Data inválida" }, { status: 400 });
       }
     }
 
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
+    const user = await prisma.user.update({
+      where: { id },
       data: {
         name: name ?? undefined,
-        birthDate: parsedBirthDate ?? undefined,
+        birthDate: parsedDate ?? undefined,
         sex: sex ?? undefined,
         weightKg: weightKg ?? undefined,
         heightCm: heightCm ?? undefined,
       },
     });
 
-    return NextResponse.json(
-      {
-        user: {
-          id: updatedUser.id,
-          name: updatedUser.name,
-          email: updatedUser.email,
-          image: updatedUser.image,
-          // devolvemos os campos de perfil também
-          birthDate: updatedUser.birthDate,
-          sex: updatedUser.sex,
-          weightKg: updatedUser.weightKg,
-          heightCm: updatedUser.heightCm,
-        },
-      },
-      { status: 200 }
-    );
+    return NextResponse.json({ user }, { status: 200 });
   } catch (error) {
-    console.error("Erro ao salvar perfil:", error);
-    return NextResponse.json(
-      { error: "Erro ao salvar perfil" },
-      { status: 500 }
-    );
+    console.error("Erro no POST /profile:", error);
+    return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }
 }
