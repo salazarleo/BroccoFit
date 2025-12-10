@@ -14,7 +14,11 @@ model User {
   password  String?
   image     String?
   createdAt DateTime   @default(now())
-
+  birthDate DateTime?
+  sex       String?   
+  weightKg  Float?    
+  heightCm  Int?     
+  
   workouts  Workout[]
   cardios   Cardio[]
 }

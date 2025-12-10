@@ -1,93 +1,116 @@
 "use client";
 
-import { useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { Logo } from "@/components/Logo";
+import Script from "next/script";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/Logo";
 
 export default function RegisterPage() {
-  // Inicializa a API do Google
-  useEffect(() => {
-    if (!window.google) return;
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
-    window.google.accounts.id.initialize({
-      client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
-      callback: handleGoogleResponse,
-      ux_mode: "popup", // força abrir o popup de contas
-    });
+  // Callback chamado pelo Google
+  async function handleGoogleResponse(response: any) {
+    try {
+      setIsLoading(true);
 
-  }, []);
+      const token = response.credential;
+      if (!token) {
+        alert("Token do Google não recebido.");
+        return;
+      }
 
-  // Quando o usuário fizer login
-  function handleGoogleResponse(response: any) {
-    const token = response.credential; // JWT do Google
+      const res = await fetch("/api/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ credential: token }),
+      });
 
-    console.log("TOKEN GOOGLE:", token);
+      if (!res.ok) {
+        alert("Erro ao autenticar. Tente novamente.");
+        return;
+      }
 
-    alert("Login com Google realizado!");
+      const data = await res.json();
+      const user = data.user;
+
+      localStorage.setItem("broccofit_user", JSON.stringify(user));
+
+      router.push("/profile");
+    } catch (err) {
+      console.error(err);
+      alert("Erro inesperado ao logar.");
+    } finally {
+      setIsLoading(false);
+    }
   }
 
-  // Ao clicar no botão estilizado → abre popup do Google
+  // Ação do botão
   function loginWithGoogle() {
-    if (!window.google) {
+    if (!window.google?.accounts?.id) {
       alert("Google API ainda não carregou.");
       return;
     }
 
-    window.google.accounts.id.prompt(); // ⭐ abre o popup FedCM/Google
+    window.google.accounts.id.prompt();
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center px-4 py-14">
-      
-      {/* VOLTAR */}
-      <div className="w-full max-w-2xl mb-10">
-        <Link href="/" className="flex items-center gap-2 text-foreground hover:text-foreground transition">
-          <ArrowLeft className="w-4 h-4" />
-          Voltar
-        </Link>
-      </div>
+    <>
+      <Script
+        src="https://accounts.google.com/gsi/client"
+        strategy="afterInteractive"
+        onLoad={() => {
+          console.log("Google script loaded!");
 
-      {/* CONTAINER */}
-      <div className="w-full max-w-2xl border border-border rounded-3xl bg-card shadow-card p-10 flex flex-col items-center text-center gap-8">
+          window.google.accounts.id.initialize({
+            client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
+            callback: handleGoogleResponse,
+            ux_mode: "popup",
+          });
+        }}
+      />
 
-        <div className="flex flex-col items-center text-center">
-          <h1 className="text-4xl font-display font-bold mt-9 leading-tight">
-            Boas vindas ao <span className="text-primary font-display">BroccoFit</span>.
+      <div className="min-h-screen bg-background flex flex-col items-center px-4 py-14">
+
+        {/* VOLTAR */}
+        <div className="w-full max-w-2xl mb-10">
+          <Link href="/" className="flex items-center gap-2 text-foreground">
+            <ArrowLeft className="w-4 h-4" />
+            Voltar
+          </Link>
+        </div>
+
+        {/* CONTAINER */}
+        <div className="w-full max-w-2xl border border-border rounded-3xl bg-card shadow-card p-10 flex flex-col items-center text-center gap-8">
+
+          <h1 className="text-4xl font-display font-bold mt-9">
+            Boas vindas ao <span className="text-primary">BroccoFit</span>.
           </h1>
-          <p className="text-foreground mt-5 text-base max-w-md leading-relaxed">
-            Teste gratuitamente entrando com a sua conta Google para começar a aproveitar nossa plataforma.
+
+          <p className="text-foreground mt-5 text-base max-w-md">
+            Teste gratuitamente entrando com a sua conta Google.
           </p>
-        </div>
 
-        {/* CARD INTERNO */}
-        <div className="w-full max-w-lg bg-card p-4 rounded-2xl flex flex-col items-center gap-6">
+          <div className="w-full max-w-lg bg-card p-4 rounded-2xl flex flex-col items-center gap-6">
 
-          {/* Botão Google estilizado */}
-          <Button
-            onClick={loginWithGoogle}
-            size="lg"
-            variant="secondary"
-            className="w-full rounded-xl flex items-center justify-center gap-3 font-medium text-foreground shadow-button hover:scale-[1.01] transition-transform cursor-pointer"
-          >
-            <img src="/google.svg" alt="Google" className="w-5 h-5" />
-            Entrar com o Google
-          </Button>
+            <Button
+              onClick={loginWithGoogle}
+              size="lg"
+              variant="secondary"
+              disabled={isLoading}
+              className="w-full rounded-xl flex items-center justify-center gap-3"
+            >
+              <img src="/google.svg" alt="Google" className="w-5 h-5" />
+              {isLoading ? "Conectando..." : "Entrar com o Google"}
+            </Button>
 
-          {/* Divisor */}
-          <div className="w-full flex items-center gap-2 opacity-70">
-            <div className="flex-1 h-px bg-border" />
           </div>
-
-          <p className="text-center text-muted-foreground text-sm leading-relaxed">
-            Ao continuar, você concorda com nossos{" "}
-            <Link href="/termos" className="text-primary font-medium hover:underline">
-              termos e condições
-            </Link>.
-          </p>
         </div>
       </div>
-    </div>
+    </>
   );
 }
