@@ -10,17 +10,16 @@ datasource db {
 model User {
   id        String    @id @default(uuid())
   name      String?
-  email     String     @unique
+  email     String    @unique
   password  String?
   image     String?
-  createdAt DateTime   @default(now())
+  createdAt DateTime  @default(now())
   birthDate DateTime?
-  sex       String?   
-  weightKg  Float?    
-  heightCm  Int?     
-  
-  workouts  Workout[]
+  heightCm  Int?
+  sex       String?
+  weightKg  Float?
   cardios   Cardio[]
+  workouts  Workout[]
 }
 
 model Workout {
@@ -28,7 +27,6 @@ model Workout {
   title     String
   date      DateTime
   createdAt DateTime @default(now())
-
   userId    String
   user      User     @relation(fields: [userId], references: [id])
 }
@@ -39,7 +37,6 @@ model Cardio {
   duration  Int
   date      DateTime
   createdAt DateTime @default(now())
-
   userId    String
   user      User     @relation(fields: [userId], references: [id])
 }
